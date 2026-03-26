@@ -4,11 +4,8 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from openai import OpenAI
 
-# Initialize OpenAI client
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-
-# 🏠 HOME + AI ITINERARY
+# 🏠 HOME + AI
 def home(request):
     result = None
 
@@ -28,11 +25,11 @@ def home(request):
         """
 
         try:
+            client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
             response = client.chat.completions.create(
                 model="gpt-4.1-mini",
-                messages=[
-                    {"role": "user", "content": prompt}
-                ]
+                messages=[{"role": "user", "content": prompt}]
             )
 
             result = response.choices[0].message.content
