@@ -1,0 +1,1 @@
+web: gunicorn Travel_Itinerary_Planner.wsgi
