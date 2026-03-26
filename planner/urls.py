@@ -1,8 +1,11 @@
+from django.contrib import admin
 from django.urls import path
-from . import views
-from .views import signup   # 👈 ADD THIS LINE
+from planner import views
 
 urlpatterns = [
+    path('admin/', admin.site.urls),
     path('', views.home, name='home'),
-    path('signup/', signup, name='signup'),
+    path('login/', views.login_view, name='login'),
+    path('signup/', views.signup_view, name='signup'),
+    path('logout/', views.logout_view, name='logout'),
 ]
