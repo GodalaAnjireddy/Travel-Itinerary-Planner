@@ -1,57 +1,31 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth.forms import UserCreationForm
-from .models import Trip
+import os
+from django.shortcuts import render
+from openai import OpenAI
 
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def home(request):
-    places_data = {
-        "hyderabad": {
-            "tourist": ["Charminar", "Golconda Fort", "Ramoji Film City", "Hussain Sagar"],
-            "food": ["Paradise Biryani", "Shah Ghouse", "Cafe Niloufer", "Bawarchi"]
-        },
-        "delhi": {
-            "tourist": ["India Gate", "Red Fort", "Qutub Minar"],
-            "food": ["Chandni Chowk", "Karim's", "Paranthe Wali Gali"]
-        },
-        "mumbai": {
-            "tourist": ["Gateway of India", "Marine Drive", "Juhu Beach"],
-            "food": ["Leopold Cafe", "Bademiya", "Brittania & Co."]
-        }
-    }
-
-    trips = Trip.objects.all().order_by('-id')
+    itinerary = None
 
     if request.method == "POST":
-        destination = request.POST.get('destination').lower()
-        days = int(request.POST.get('days'))
-        trip_type = request.POST.get('type')
+        city = request.POST.get("city")
+        days = request.POST.get("days")
+        budget = request.POST.get("budget")
 
-        Trip.objects.create(destination=destination, days=days)
+        prompt = f"""
+        Plan a {days}-day trip to {city} under budget {budget}.
+        Give a clean day-wise itinerary with places, food, and tips.
+        """
 
-        places = places_data.get(destination, {}).get(trip_type, ["Explore City"])
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            itinerary = response.choices[0].message.content
+        except Exception as e:
+            itinerary = f"Error: {str(e)}"
 
-        itinerary = []
-        for i in range(days):
-            place = places[i % len(places)]
-            itinerary.append(f"Day {i+1} - Visit {place}")
-
-        return render(request, 'home.html', {
-            'trips': trips,
-            'itinerary': itinerary,
-            'destination': destination
-        })
-
-    return render(request, 'home.html', {'trips': trips})
-
-
-# 🔐 SIGNUP VIEW
-def signup(request):
-    if request.method == 'POST':
-        form = UserCreationForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('/accounts/login/')
-    else:
-        form = UserCreationForm()
-
-    return render(request, 'signup.html', {'form': form})
+    return render(request, "home.html", {"itinerary": itinerary})
